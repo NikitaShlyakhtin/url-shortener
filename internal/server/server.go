@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"errors"
 
 	"url.shortener/internal/data"
 	"url.shortener/internal/jsonlog"
@@ -23,9 +24,13 @@ func NewServer(logger *jsonlog.Logger, models data.Models) *UrlShortenerServer {
 }
 
 func (s *UrlShortenerServer) CreateShortUrl(ctx context.Context, in *pb.OriginalUrl) (*pb.ShortUrl, error) {
+	if err := validateOriginalUrl(in.GetOriginalUrl()); err != nil {
+		return nil, s.invalidArgumentError(err)
+	}
+
 	short, err := s.models.Links.Insert(in)
 	if err != nil {
-		return nil, err
+		return nil, s.serverError(err)
 	}
 
 	shortUrl := short.GetShortUrl()
@@ -43,9 +48,18 @@ func (s *UrlShortenerServer) CreateShortUrl(ctx context.Context, in *pb.Original
 }
 
 func (s *UrlShortenerServer) GetOriginalUrl(ctx context.Context, in *pb.ShortUrl) (*pb.OriginalUrl, error) {
+	if err := validateShortUrl(in.GetShortUrl()); err != nil {
+		return nil, s.invalidArgumentError(err)
+	}
+
 	original, err := s.models.Links.Get(in)
 	if err != nil {
-		return nil, err
+		switch {
+		case errors.Is(err, data.ErrLinkNotFound):
+			return nil, s.notFoundError()
+		default:
+			return nil, s.serverError(err)
+		}
 	}
 
 	originalUrl := original.GetOriginalUrl()
@@ -60,4 +74,20 @@ func (s *UrlShortenerServer) GetOriginalUrl(ctx context.Context, in *pb.ShortUrl
 	})
 
 	return r, nil
+}
+
+func validateOriginalUrl(originalUrl string) error {
+	if originalUrl == "" {
+		return errors.New("original URL must be provided")
+	}
+
+	return nil
+}
+
+func validateShortUrl(shortUrl string) error {
+	if shortUrl == "" {
+		return errors.New("short URL must be provided")
+	}
+
+	return nil
 }

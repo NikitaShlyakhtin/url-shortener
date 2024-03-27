@@ -37,23 +37,15 @@ func main() {
 
 	flag.StringVar(&cfg.baseUrl, "base_url", "", "The base URL for short links")
 
-	flag.StringVar(&cfg.storage.storage_type, "storage_type", "in-memory", "The storage type to use for generated URLs (in-memory, postgres)")
+	flag.StringVar(&cfg.storage.storage_type, "storage_type", "in-memory", "The storage type to use for generated URLs (in-memory|postgres)")
 	flag.StringVar(&cfg.storage.dsn, "postgres-dsn", "", "PostgreSQL DSN")
 
 	flag.Parse()
 
 	logger := jsonlog.New(log.Writer(), jsonlog.LevelInfo)
 
-	if cfg.baseUrl == "" {
-		logger.PrintFatal(errors.New("base URL is required"), nil)
-	}
-
-	if cfg.storage.storage_type != "in-memory" && cfg.storage.storage_type != "postgres" {
-		logger.PrintFatal(errors.New("invalid storage type"), nil)
-	}
-
-	if cfg.storage.storage_type == "postgres" && cfg.storage.dsn == "" {
-		logger.PrintFatal(errors.New("DSN is required for PostgreSQL storage"), nil)
+	if err := validateConfig(cfg); err != nil {
+		logger.PrintFatal(err, nil)
 	}
 
 	var models *data.Models
@@ -81,6 +73,22 @@ func main() {
 	if err != nil {
 		logger.PrintFatal(err, nil)
 	}
+}
+
+func validateConfig(cfg config) error {
+	if cfg.baseUrl == "" {
+		return errors.New("base URL is required")
+	}
+
+	if cfg.storage.storage_type != "in-memory" && cfg.storage.storage_type != "postgres" {
+		return errors.New("invalid storage type")
+	}
+
+	if cfg.storage.storage_type == "postgres" && cfg.storage.dsn == "" {
+		return errors.New("DSN is required for PostgreSQL storage")
+	}
+
+	return nil
 }
 
 func openDB(cfg config) (*sql.DB, error) {
