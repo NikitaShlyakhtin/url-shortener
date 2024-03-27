@@ -2,24 +2,33 @@ package server
 
 import (
 	"context"
-	"fmt"
 
+	"url.shortener/internal/data"
 	"url.shortener/internal/jsonlog"
 	pb "url.shortener/internal/proto"
 )
 
 type UrlShortenerServer struct {
 	logger *jsonlog.Logger
+	models data.Models
 
 	pb.UnimplementedUrlShortenerServer
 }
 
-func NewServer(logger *jsonlog.Logger) *UrlShortenerServer {
-	return &UrlShortenerServer{logger: logger}
+func NewServer(logger *jsonlog.Logger, models data.Models) *UrlShortenerServer {
+	return &UrlShortenerServer{
+		logger: logger,
+		models: models,
+	}
 }
 
 func (s *UrlShortenerServer) CreateShortUrl(ctx context.Context, in *pb.OriginalUrl) (*pb.ShortUrl, error) {
-	shortUrl := fmt.Sprint("short.url/", len(in.GetOriginalUrl()))
+	short, err := s.models.Links.Insert(in)
+	if err != nil {
+		return nil, err
+	}
+
+	shortUrl := short.GetShortUrl()
 
 	r := &pb.ShortUrl{
 		ShortUrl: shortUrl,
@@ -34,7 +43,12 @@ func (s *UrlShortenerServer) CreateShortUrl(ctx context.Context, in *pb.Original
 }
 
 func (s *UrlShortenerServer) GetOriginalUrl(ctx context.Context, in *pb.ShortUrl) (*pb.OriginalUrl, error) {
-	originalUrl := "example.com"
+	original, err := s.models.Links.Get(in)
+	if err != nil {
+		return nil, err
+	}
+
+	originalUrl := original.GetOriginalUrl()
 
 	r := &pb.OriginalUrl{
 		OriginalUrl: originalUrl,

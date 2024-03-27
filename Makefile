@@ -20,6 +20,11 @@ help:
 run/api:
 	go run ./cmd/api
 
+## run/mock_client: run the mock client
+.PHONY: run/mock_client
+run/mock_client:
+	go run ./internal/mock_client
+
 ## proto/generate: generate the proto files
 .PHONY: proto/generate
 proto/generate:

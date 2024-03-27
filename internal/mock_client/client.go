@@ -2,7 +2,9 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"google.golang.org/grpc"
@@ -28,28 +30,45 @@ func main() {
 
 	client := pb.NewUrlShortenerClient(conn)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	originalUrl := "example.com"
-
-	shortUrl, err := client.CreateShortUrl(ctx, &pb.OriginalUrl{OriginalUrl: originalUrl})
-	if err != nil {
-		logger.PrintFatal(err, nil)
-	}
-
-	logger.PrintInfo("Short URL created", map[string]string{
-		"original_url": originalUrl,
-		"short_url":    shortUrl.GetShortUrl(),
+	logger.PrintInfo("Client started", map[string]string{
+		"address": addr,
 	})
 
-	_, err = client.GetOriginalUrl(ctx, &pb.ShortUrl{ShortUrl: shortUrl.GetShortUrl()})
-	if err != nil {
-		logger.PrintFatal(err, nil)
-	}
+	for {
+		var input string
+		fmt.Scan(&input)
+		split := strings.Split(input, ";")
 
-	logger.PrintInfo("Original URL retrieved", map[string]string{
-		"short_url":    shortUrl.GetShortUrl(),
-		"original_url": "example.com",
-	})
+		command := split[0]
+		value := split[1]
+
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+
+		switch command {
+		case "create":
+			shortUrl, err := client.CreateShortUrl(ctx, &pb.OriginalUrl{OriginalUrl: value})
+			if err != nil {
+				logger.PrintError(err, nil)
+				continue
+			}
+
+			logger.PrintInfo("Short URL created", map[string]string{
+				"original_url": value,
+				"short_url":    shortUrl.GetShortUrl(),
+			})
+		case "get":
+			originalUrl, err := client.GetOriginalUrl(ctx, &pb.ShortUrl{ShortUrl: value})
+			if err != nil {
+				logger.PrintError(err, nil)
+				continue
+			}
+
+			logger.PrintInfo("Original URL retrieved", map[string]string{
+				"short_url":    value,
+				"original_url": originalUrl.GetOriginalUrl(),
+			})
+		}
+
+		cancel()
+	}
 }
