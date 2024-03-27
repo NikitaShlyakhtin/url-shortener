@@ -11,6 +11,7 @@ import (
 type config struct {
 	ip      string
 	port    int
+	baseUrl string
 	storage struct {
 		inMemory bool
 		dsn      string
@@ -29,6 +30,8 @@ func main() {
 	flag.StringVar(&cfg.ip, "ip", "localhost", "The server IP address")
 	flag.IntVar(&cfg.port, "port", 50051, "The server port")
 
+	flag.StringVar(&cfg.baseUrl, "base_url", "", "The base URL for short links")
+
 	flag.BoolVar(&cfg.storage.inMemory, "in_memory", true, "Use in-memory storage")
 	flag.StringVar(&cfg.storage.dsn, "dsn", "", "PostgreSQL DSN")
 
@@ -39,7 +42,7 @@ func main() {
 	app := &application{
 		config: cfg,
 		logger: logger,
-		models: *data.NewModelsInMemory(),
+		models: *data.NewModelsInMemory(cfg.baseUrl),
 	}
 
 	err := app.serve()

@@ -4,8 +4,8 @@ type Models struct {
 	Links LinkModel
 }
 
-func NewModelsInMemory() *Models {
+func NewModelsInMemory(baseUrl string) *Models {
 	return &Models{
-		Links: NewLinkModelInMemory(),
+		Links: NewLinkModelInMemory(baseUrl),
 	}
 }
