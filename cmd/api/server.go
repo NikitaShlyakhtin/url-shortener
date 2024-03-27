@@ -3,6 +3,9 @@ package main
 import (
 	"fmt"
 	"net"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"google.golang.org/grpc"
 	pb "url.shortener/internal/proto"
@@ -22,15 +25,39 @@ func (app *application) serve() error {
 	grpcServer := grpc.NewServer()
 	pb.RegisterUrlShortenerServer(grpcServer, app.newServer())
 
-	app.logger.PrintInfo("Starting server", map[string]string{
-		"address": fmt.Sprintf("%s:%d", app.config.ip, app.config.port),
-		"storage": app.config.storage.storage_type,
-	})
+	done := make(chan bool)
 
-	err = grpcServer.Serve(lis)
-	if err != nil {
-		return err
-	}
+	go func() {
+		quit := make(chan os.Signal, 1)
+
+		signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+
+		s := <-quit
+
+		app.logger.PrintInfo("shutting down server", map[string]string{
+			"signal": s.String(),
+		})
+
+		grpcServer.GracefulStop()
+
+		done <- true
+	}()
+
+	go func() {
+		app.logger.PrintInfo("starting server", map[string]string{
+			"address": fmt.Sprintf("%s:%d", app.config.ip, app.config.port),
+			"storage": app.config.storage.storage_type,
+		})
+
+		err = grpcServer.Serve(lis)
+		if err != nil && err != grpc.ErrServerStopped {
+			app.logger.PrintFatal(err, nil)
+		}
+	}()
+
+	<-done
+
+	app.logger.PrintInfo("server gracefully stopped", nil)
 
 	return nil
 }
