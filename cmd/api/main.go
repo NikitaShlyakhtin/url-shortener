@@ -1,10 +1,14 @@
 package main
 
 import (
+	"context"
+	"database/sql"
 	"errors"
 	"flag"
 	"log"
+	"time"
 
+	_ "github.com/lib/pq"
 	"url.shortener/internal/data"
 	jsonlog "url.shortener/internal/jsonlog"
 )
@@ -34,7 +38,7 @@ func main() {
 	flag.StringVar(&cfg.baseUrl, "base_url", "", "The base URL for short links")
 
 	flag.StringVar(&cfg.storage.storage_type, "storage_type", "in-memory", "The storage type to use for generated URLs (in-memory, postgres)")
-	flag.StringVar(&cfg.storage.dsn, "dsn", "", "PostgreSQL DSN")
+	flag.StringVar(&cfg.storage.dsn, "postgres-dsn", "", "PostgreSQL DSN")
 
 	flag.Parse()
 
@@ -52,14 +56,46 @@ func main() {
 		logger.PrintFatal(errors.New("DSN is required for PostgreSQL storage"), nil)
 	}
 
+	var models *data.Models
+	if cfg.storage.storage_type == "in-memory" {
+		models = data.NewModelsInMemory(cfg.baseUrl)
+	} else {
+		db, err := openDB(cfg)
+		if err != nil {
+			logger.PrintFatal(err, nil)
+		}
+		defer db.Close()
+
+		logger.PrintInfo("Database connection pool established", nil)
+
+		models = data.NewModelsPostgres(cfg.baseUrl, db)
+	}
+
 	app := &application{
 		config: cfg,
 		logger: logger,
-		models: *data.NewModelsInMemory(cfg.baseUrl),
+		models: *models,
 	}
 
 	err := app.serve()
 	if err != nil {
 		logger.PrintFatal(err, nil)
 	}
+}
+
+func openDB(cfg config) (*sql.DB, error) {
+	db, err := sql.Open("postgres", cfg.storage.dsn)
+	if err != nil {
+		return nil, err
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	err = db.PingContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return db, nil
 }

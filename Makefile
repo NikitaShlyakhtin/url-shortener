@@ -18,7 +18,7 @@ help:
 ## run/api: run the cmd/api application
 .PHONY: run/api
 run/api:
-	go run ./cmd/api -base_url=$(BASE_URL) -storage_type=in-memory
+	go run ./cmd/api -base_url=$(BASE_URL) -storage_type=postgres -postgres-dsn=$(POSTGRES_DSN)
 
 ## run/mock_client: run the mock client
 .PHONY: run/mock_client
