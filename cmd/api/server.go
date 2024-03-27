@@ -24,6 +24,7 @@ func (app *application) serve() error {
 
 	app.logger.PrintInfo("Starting server", map[string]string{
 		"address": fmt.Sprintf("%s:%d", app.config.ip, app.config.port),
+		"storage": app.config.storage.storage_type,
 	})
 
 	err = grpcServer.Serve(lis)

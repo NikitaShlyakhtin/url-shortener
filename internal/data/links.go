@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"math/rand"
+	"sync"
 
 	pb "url.shortener/internal/proto"
 )
@@ -21,6 +22,7 @@ type LinkModelInMemory struct {
 	baseUrl         string
 	originalToShort map[string]string
 	shortToOriginal map[string]string
+	mu              sync.RWMutex
 }
 
 func NewLinkModelInMemory(baseUrl string) *LinkModelInMemory {
@@ -32,6 +34,9 @@ func NewLinkModelInMemory(baseUrl string) *LinkModelInMemory {
 }
 
 func (m *LinkModelInMemory) Insert(original *pb.OriginalUrl) (*pb.ShortUrl, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
 	originalUrl := original.GetOriginalUrl()
 
 	short, present := m.originalToShort[originalUrl]
@@ -52,6 +57,9 @@ func (m *LinkModelInMemory) Insert(original *pb.OriginalUrl) (*pb.ShortUrl, erro
 }
 
 func (m *LinkModelInMemory) Get(short *pb.ShortUrl) (*pb.OriginalUrl, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
 	shortUrl := short.GetShortUrl()
 
 	original, present := m.shortToOriginal[shortUrl]

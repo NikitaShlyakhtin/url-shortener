@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"log"
 
@@ -13,8 +14,8 @@ type config struct {
 	port    int
 	baseUrl string
 	storage struct {
-		inMemory bool
-		dsn      string
+		storage_type string
+		dsn          string
 	}
 }
 
@@ -32,12 +33,24 @@ func main() {
 
 	flag.StringVar(&cfg.baseUrl, "base_url", "", "The base URL for short links")
 
-	flag.BoolVar(&cfg.storage.inMemory, "in_memory", true, "Use in-memory storage")
+	flag.StringVar(&cfg.storage.storage_type, "storage_type", "in-memory", "The storage type to use for generated URLs (in-memory, postgres)")
 	flag.StringVar(&cfg.storage.dsn, "dsn", "", "PostgreSQL DSN")
 
 	flag.Parse()
 
 	logger := jsonlog.New(log.Writer(), jsonlog.LevelInfo)
+
+	if cfg.baseUrl == "" {
+		logger.PrintFatal(errors.New("base URL is required"), nil)
+	}
+
+	if cfg.storage.storage_type != "in-memory" && cfg.storage.storage_type != "postgres" {
+		logger.PrintFatal(errors.New("invalid storage type"), nil)
+	}
+
+	if cfg.storage.storage_type == "postgres" && cfg.storage.dsn == "" {
+		logger.PrintFatal(errors.New("DSN is required for PostgreSQL storage"), nil)
+	}
 
 	app := &application{
 		config: cfg,
