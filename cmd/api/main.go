@@ -13,6 +13,18 @@ import (
 	jsonlog "url.shortener/internal/jsonlog"
 )
 
+type storageConfig struct {
+	storage_type string
+	db           databaseConfig
+}
+
+type databaseConfig struct {
+	dsn          string
+	maxOpenConns int
+	maxIdleConns int
+	maxIdleTime  string
+}
+
 type config struct {
 	ip           string
 	port         int
@@ -23,15 +35,7 @@ type config struct {
 		burst   int
 		enabled bool
 	}
-	storage struct {
-		storage_type string
-		db           struct {
-			dsn          string
-			maxOpenConns int
-			maxIdleConns int
-			maxIdleTime  string
-		}
-	}
+	storage storageConfig
 }
 
 type application struct {
