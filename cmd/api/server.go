@@ -23,7 +23,10 @@ func (app *application) serve() error {
 	}
 
 	grpcServer := grpc.NewServer(
-		app.withRateLimitInterceptor(),
+		grpc.ChainUnaryInterceptor(
+			app.loggingInterceptor,
+			app.withRateLimitInterceptor(),
+		),
 	)
 
 	pb.RegisterUrlShortenerServer(grpcServer, app.newServer())

@@ -2,18 +2,20 @@ package main
 
 import (
 	"context"
-	"errors"
+	"fmt"
 	"strings"
 	"sync"
 	"time"
 
 	"golang.org/x/time/rate"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/peer"
+	"google.golang.org/grpc/status"
 	"url.shortener/internal/server"
 )
 
-func (app *application) withRateLimitInterceptor() grpc.ServerOption {
+func (app *application) withRateLimitInterceptor() grpc.UnaryServerInterceptor {
 	type client struct {
 		limiter  *rate.Limiter
 		lastSeen time.Time
@@ -62,17 +64,32 @@ func (app *application) withRateLimitInterceptor() grpc.ServerOption {
 
 		mu.Unlock()
 
-		resp, err := handler(ctx, req)
-		if err != nil {
-			if errors.Is(err, server.ErrServerError) {
-				app.logger.PrintError(err, nil)
-			}
-
-			return nil, err
-		}
-
-		return resp, nil
+		return handler(ctx, req)
 	}
 
-	return grpc.UnaryInterceptor(rateLimitInterceptor)
+	return rateLimitInterceptor
+}
+
+func (app *application) loggingInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+	app.logger.PrintInfo("gRPC request", map[string]string{
+		"method":  info.FullMethod,
+		"request": fmt.Sprintf("%+v", req),
+	})
+
+	resp, err := handler(ctx, req)
+	if err != nil {
+		st, _ := status.FromError(err)
+		if st.Code() == codes.Internal {
+			app.logger.PrintFatal(err, nil)
+		}
+
+		app.logger.PrintError(err, nil)
+	} else {
+		app.logger.PrintInfo("gRPC response", map[string]string{
+			"method":   info.FullMethod,
+			"response": fmt.Sprintf("%+v", resp),
+		})
+	}
+
+	return resp, err
 }
