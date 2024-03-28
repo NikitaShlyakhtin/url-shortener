@@ -24,7 +24,12 @@ type config struct {
 	}
 	storage struct {
 		storage_type string
-		dsn          string
+		db           struct {
+			dsn          string
+			maxOpenConns int
+			maxIdleConns int
+			maxIdleTime  string
+		}
 	}
 }
 
@@ -79,7 +84,12 @@ func parseFlags() config {
 	flag.StringVar(&cfg.baseUrl, "base_url", "", "The base URL for short links")
 
 	flag.StringVar(&cfg.storage.storage_type, "storage_type", "in-memory", "The storage type to use for generated URLs (in-memory|postgres)")
-	flag.StringVar(&cfg.storage.dsn, "postgres-dsn", "", "PostgreSQL DSN")
+
+	flag.StringVar(&cfg.storage.db.dsn, "db-dsn", "", "PostgreSQL DSN")
+
+	flag.IntVar(&cfg.storage.db.maxOpenConns, "db-max-open-conns", 25, "PostgreSQL max open connections")
+	flag.IntVar(&cfg.storage.db.maxIdleConns, "db-max-idle-conns", 25, "PostgreSQL max idle connections")
+	flag.StringVar(&cfg.storage.db.maxIdleTime, "db-max-idle-time", "15m", "PostgreSQL max connection idle time")
 
 	flag.Float64Var(&cfg.limiter.rps, "limiter-rps", 2, "Rate limiter maximum requests per second")
 	flag.IntVar(&cfg.limiter.burst, "limiter-burst", 4, "Rate limiter maximum burst")
@@ -99,7 +109,7 @@ func validateConfig(cfg config) error {
 		return errors.New("invalid storage type")
 	}
 
-	if cfg.storage.storage_type == "postgres" && cfg.storage.dsn == "" {
+	if cfg.storage.storage_type == "postgres" && cfg.storage.db.dsn == "" {
 		return errors.New("DSN is required for PostgreSQL storage")
 	}
 
@@ -107,10 +117,20 @@ func validateConfig(cfg config) error {
 }
 
 func openDB(cfg config) (*sql.DB, error) {
-	db, err := sql.Open("postgres", cfg.storage.dsn)
+	db, err := sql.Open("postgres", cfg.storage.db.dsn)
 	if err != nil {
 		return nil, err
 	}
+
+	db.SetMaxOpenConns(cfg.storage.db.maxOpenConns)
+	db.SetMaxIdleConns(cfg.storage.db.maxIdleConns)
+
+	duration, err := time.ParseDuration(cfg.storage.db.maxIdleTime)
+	if err != nil {
+		return nil, err
+	}
+
+	db.SetConnMaxIdleTime(duration)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
