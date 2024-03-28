@@ -35,21 +35,7 @@ type application struct {
 }
 
 func main() {
-	var cfg config
-
-	flag.StringVar(&cfg.ip, "ip", "localhost", "The server IP address")
-	flag.IntVar(&cfg.port, "port", 50051, "The server port")
-
-	flag.StringVar(&cfg.baseUrl, "base_url", "", "The base URL for short links")
-
-	flag.StringVar(&cfg.storage.storage_type, "storage_type", "in-memory", "The storage type to use for generated URLs (in-memory|postgres)")
-	flag.StringVar(&cfg.storage.dsn, "postgres-dsn", "", "PostgreSQL DSN")
-
-	flag.Float64Var(&cfg.limiter.rps, "limiter-rps", 2, "Rate limiter maximum requests per second")
-	flag.IntVar(&cfg.limiter.burst, "limiter-burst", 4, "Rate limiter maximum burst")
-	flag.BoolVar(&cfg.limiter.enabled, "limiter-enabled", false, "Enable rate limiter")
-
-	flag.Parse()
+	cfg := parseFlags()
 
 	logger := jsonlog.New(log.Writer(), jsonlog.LevelInfo)
 
@@ -82,6 +68,26 @@ func main() {
 	if err != nil {
 		logger.PrintFatal(err, nil)
 	}
+}
+
+func parseFlags() config {
+	var cfg config
+
+	flag.StringVar(&cfg.ip, "ip", "localhost", "The server IP address")
+	flag.IntVar(&cfg.port, "port", 50051, "The server port")
+
+	flag.StringVar(&cfg.baseUrl, "base_url", "", "The base URL for short links")
+
+	flag.StringVar(&cfg.storage.storage_type, "storage_type", "in-memory", "The storage type to use for generated URLs (in-memory|postgres)")
+	flag.StringVar(&cfg.storage.dsn, "postgres-dsn", "", "PostgreSQL DSN")
+
+	flag.Float64Var(&cfg.limiter.rps, "limiter-rps", 2, "Rate limiter maximum requests per second")
+	flag.IntVar(&cfg.limiter.burst, "limiter-burst", 4, "Rate limiter maximum burst")
+	flag.BoolVar(&cfg.limiter.enabled, "limiter-enabled", false, "Enable rate limiter")
+
+	flag.Parse()
+
+	return cfg
 }
 
 func validateConfig(cfg config) error {
