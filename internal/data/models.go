@@ -6,17 +6,18 @@ type Models struct {
 	Links LinkModel
 }
 
-func NewModelsInMemory(baseUrl string) *Models {
+func NewModelsInMemory(baseUrl string, suffixLength int) *Models {
 	return &Models{
-		Links: NewLinkModelInMemory(baseUrl),
+		Links: NewLinkModelInMemory(baseUrl, suffixLength),
 	}
 }
 
-func NewModelsPostgres(baseUrl string, db *sql.DB) *Models {
+func NewModelsPostgres(baseUrl string, suffixLength int, db *sql.DB) *Models {
 	return &Models{
 		Links: &LinkModelPostgres{
-			baseUrl: baseUrl,
-			DB:      db,
+			baseUrl:      baseUrl,
+			suffixLength: suffixLength,
+			DB:           db,
 		},
 	}
 }

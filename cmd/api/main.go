@@ -14,10 +14,11 @@ import (
 )
 
 type config struct {
-	ip      string
-	port    int
-	baseUrl string
-	limiter struct {
+	ip           string
+	port         int
+	baseUrl      string
+	suffixLength int
+	limiter      struct {
 		rps     float64
 		burst   int
 		enabled bool
@@ -50,7 +51,7 @@ func main() {
 
 	var models *data.Models
 	if cfg.storage.storage_type == "in-memory" {
-		models = data.NewModelsInMemory(cfg.baseUrl)
+		models = data.NewModelsInMemory(cfg.baseUrl, cfg.suffixLength)
 	} else {
 		db, err := openDB(cfg)
 		if err != nil {
@@ -60,7 +61,7 @@ func main() {
 
 		logger.PrintInfo("Database connection pool established", nil)
 
-		models = data.NewModelsPostgres(cfg.baseUrl, db)
+		models = data.NewModelsPostgres(cfg.baseUrl, cfg.suffixLength, db)
 	}
 
 	app := &application{
@@ -82,6 +83,7 @@ func parseFlags() config {
 	flag.IntVar(&cfg.port, "port", 50051, "The server port")
 
 	flag.StringVar(&cfg.baseUrl, "base_url", "", "The base URL for short links")
+	flag.IntVar(&cfg.suffixLength, "suffix_length", 10, "The length of the URL suffix")
 
 	flag.StringVar(&cfg.storage.storage_type, "storage_type", "in-memory", "The storage type to use for generated URLs (in-memory|postgres)")
 

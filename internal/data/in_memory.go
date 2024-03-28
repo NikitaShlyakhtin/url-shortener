@@ -9,14 +9,16 @@ import (
 
 type LinkModelInMemory struct {
 	baseUrl         string
+	suffixLength    int
 	originalToShort map[string]string
 	shortToOriginal map[string]string
 	mu              sync.RWMutex
 }
 
-func NewLinkModelInMemory(baseUrl string) *LinkModelInMemory {
+func NewLinkModelInMemory(baseUrl string, suffixLength int) *LinkModelInMemory {
 	return &LinkModelInMemory{
 		baseUrl:         baseUrl,
+		suffixLength:    suffixLength,
 		originalToShort: make(map[string]string),
 		shortToOriginal: make(map[string]string),
 	}
@@ -33,7 +35,7 @@ func (m *LinkModelInMemory) Insert(original *pb.OriginalUrl) (*pb.ShortUrl, erro
 		return &pb.ShortUrl{ShortUrl: short}, nil
 	}
 
-	suffix, err := generateUrlSuffix()
+	suffix, err := generateUrlSuffix(m.suffixLength)
 	if err != nil {
 		return nil, err
 	}

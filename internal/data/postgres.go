@@ -10,8 +10,9 @@ import (
 )
 
 type LinkModelPostgres struct {
-	baseUrl string
-	DB      *sql.DB
+	baseUrl      string
+	suffixLength int
+	DB           *sql.DB
 }
 
 func (m *LinkModelPostgres) Insert(original *pb.OriginalUrl) (*pb.ShortUrl, error) {
@@ -37,7 +38,7 @@ func (m *LinkModelPostgres) Insert(original *pb.OriginalUrl) (*pb.ShortUrl, erro
 			VALUES ($1, $2) 
 		`
 
-		suffix, err := generateUrlSuffix()
+		suffix, err := generateUrlSuffix(m.suffixLength)
 		if err != nil {
 			return nil, err
 		}

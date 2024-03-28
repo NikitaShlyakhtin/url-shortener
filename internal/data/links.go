@@ -16,9 +16,10 @@ type LinkModel interface {
 	Get(short *pb.ShortUrl) (*pb.OriginalUrl, error)
 }
 
-func generateUrlSuffix() (string, error) {
+func generateUrlSuffix(length int) (string, error) {
 	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_"
-	const shortURLLength = 10
+
+	shortURLLength := length
 
 	shortURL := make([]byte, shortURLLength)
 	for i := range shortURL {
