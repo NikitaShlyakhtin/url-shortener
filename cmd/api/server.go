@@ -7,6 +7,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/recovery"
 	"google.golang.org/grpc"
 	pb "url.shortener/internal/proto"
 	"url.shortener/internal/server"
@@ -24,6 +25,7 @@ func (app *application) serve() error {
 
 	grpcServer := grpc.NewServer(
 		grpc.ChainUnaryInterceptor(
+			recovery.UnaryServerInterceptor(recovery.WithRecoveryHandler(app.panicRecoveryHandler)),
 			app.loggingInterceptor,
 			app.withRateLimitInterceptor(),
 		),

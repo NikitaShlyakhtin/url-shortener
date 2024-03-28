@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"sync"
@@ -92,4 +93,12 @@ func (app *application) loggingInterceptor(ctx context.Context, req interface{},
 	}
 
 	return resp, err
+}
+
+func (app *application) panicRecoveryHandler(p any) (err error) {
+	app.logger.PrintError(errors.New("recovered from panic"), map[string]string{
+		"panic": fmt.Sprintf("%s", p),
+	})
+
+	return status.Errorf(codes.Internal, "%s", p)
 }
