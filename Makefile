@@ -21,7 +21,7 @@ run/api:
 	go run ./cmd/api \
 		-base_url=$(BASE_URL) \
 		-storage_type=postgres \
-		-postgres-dsn=$(POSTGRES_DSN) \
+		-db-dsn=$(POSTGRES_DSN) \
 		-limiter-enabled
 
 ## run/mock_client: run the mock client
