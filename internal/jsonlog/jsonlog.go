@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"io"
 	"os"
-	"runtime/debug"
 	"sync"
 	"time"
 )
@@ -67,16 +66,11 @@ func (l *Logger) print(level Level, message string, properties map[string]string
 		Time       string            `json:"time"`
 		Message    string            `json:"message"`
 		Properties map[string]string `json:"properties,omitempty"`
-		Trace      string            `json:"trace,omitempty"`
 	}{
 		Level:      level.String(),
 		Time:       time.Now().UTC().Format(time.RFC3339),
 		Message:    message,
 		Properties: properties,
-	}
-
-	if level >= LevelError {
-		aux.Trace = string(debug.Stack())
 	}
 
 	var line []byte

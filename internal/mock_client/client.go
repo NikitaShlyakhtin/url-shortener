@@ -35,7 +35,7 @@ func main() {
 	})
 
 	for {
-		var input string
+		var input string = "create;test.com"
 		fmt.Scan(&input)
 		split := strings.Split(input, ";")
 
@@ -71,4 +71,5 @@ func main() {
 
 		cancel()
 	}
+
 }

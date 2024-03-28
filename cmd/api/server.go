@@ -22,7 +22,10 @@ func (app *application) serve() error {
 		app.logger.PrintFatal(err, nil)
 	}
 
-	grpcServer := grpc.NewServer()
+	grpcServer := grpc.NewServer(
+		app.withRateLimitInterceptor(),
+	)
+
 	pb.RegisterUrlShortenerServer(grpcServer, app.newServer())
 
 	done := make(chan bool)
@@ -47,6 +50,7 @@ func (app *application) serve() error {
 		app.logger.PrintInfo("starting server", map[string]string{
 			"address": fmt.Sprintf("%s:%d", app.config.ip, app.config.port),
 			"storage": app.config.storage.storage_type,
+			"limiter": fmt.Sprintf("enabled=%t, rps=%.2f, burst=%d", app.config.limiter.enabled, app.config.limiter.rps, app.config.limiter.burst),
 		})
 
 		err = grpcServer.Serve(lis)
