@@ -63,3 +63,10 @@ build/api:
 	@echo 'Building cmd/api...'
 	go build -o=./bin/api ./cmd/api
 	GOOS=linux GOARCH=amd64 go build -o=./bin/linux_amd64/api ./cmd/api
+
+## build/mock_client: build the internal/mock_client application
+.PHONY: build/mock_client
+build/mock_client:
+	@echo 'Building internal/mock_client...'
+	go build -o=./bin/mock_client ./internal/mock_client
+	GOOS=linux GOARCH=amd64 go build -o=./bin/linux_amd64/mock_client ./internal/mock_client

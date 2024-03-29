@@ -4,23 +4,38 @@ import (
 	"context"
 	"errors"
 
+	"google.golang.org/grpc/health"
+	"google.golang.org/grpc/health/grpc_health_v1"
 	"url.shortener/internal/data"
 	"url.shortener/internal/jsonlog"
 	pb "url.shortener/internal/proto"
 )
 
 type UrlShortenerServer struct {
-	logger *jsonlog.Logger
-	models data.Models
+	logger       *jsonlog.Logger
+	models       data.Models
+	healthServer *health.Server
 
 	pb.UnimplementedUrlShortenerServer
 }
 
 func NewServer(logger *jsonlog.Logger, models data.Models) *UrlShortenerServer {
+	healthServer := health.NewServer()
+	healthServer.SetServingStatus("", grpc_health_v1.HealthCheckResponse_SERVING)
+
 	return &UrlShortenerServer{
-		logger: logger,
-		models: models,
+		logger:       logger,
+		models:       models,
+		healthServer: healthServer,
 	}
+}
+
+func (s *UrlShortenerServer) Check(ctx context.Context, in *grpc_health_v1.HealthCheckRequest) (*grpc_health_v1.HealthCheckResponse, error) {
+	return s.healthServer.Check(ctx, in)
+}
+
+func (s *UrlShortenerServer) Watch(in *grpc_health_v1.HealthCheckRequest, srv grpc_health_v1.Health_WatchServer) error {
+	return s.healthServer.Watch(in, srv)
 }
 
 func (s *UrlShortenerServer) CreateShortUrl(ctx context.Context, in *pb.OriginalUrl) (*pb.ShortUrl, error) {

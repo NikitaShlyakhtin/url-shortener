@@ -1,0 +1,13 @@
+version: '3'
+services:
+  mock_client:
+    build:
+      context: .
+      dockerfile: ./internal/mock_client/Dockerfile.client
+    ports:
+      - "50052:50052"
+    stdin_open: true
+    tty: true
+    depends_on:
+      api:
+        condition: service_healthy

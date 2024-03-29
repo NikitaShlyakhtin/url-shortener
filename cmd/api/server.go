@@ -9,6 +9,7 @@ import (
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/recovery"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/health/grpc_health_v1"
 	pb "url.shortener/internal/proto"
 	"url.shortener/internal/server"
 )
@@ -31,7 +32,9 @@ func (app *application) serve() error {
 		),
 	)
 
-	pb.RegisterUrlShortenerServer(grpcServer, app.newServer())
+	server := app.newServer()
+	pb.RegisterUrlShortenerServer(grpcServer, server)
+	grpc_health_v1.RegisterHealthServer(grpcServer, server)
 
 	done := make(chan bool)
 

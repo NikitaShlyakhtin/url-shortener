@@ -14,7 +14,7 @@ import (
 )
 
 func main() {
-	addr := "localhost:50051"
+	addr := "api:50051"
 
 	logger := jsonlog.New(log.Writer(), jsonlog.LevelInfo)
 
@@ -35,7 +35,7 @@ func main() {
 	})
 
 	for {
-		var input string = "create;test.com"
+		var input string
 		fmt.Scan(&input)
 		split := strings.Split(input, ";")
 
@@ -71,5 +71,4 @@ func main() {
 
 		cancel()
 	}
-
 }

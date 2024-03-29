@@ -83,7 +83,7 @@ func main() {
 func parseFlags() config {
 	var cfg config
 
-	flag.StringVar(&cfg.ip, "ip", "localhost", "The server IP address")
+	flag.StringVar(&cfg.ip, "ip", "0.0.0.0", "The server IP address")
 	flag.IntVar(&cfg.port, "port", 50051, "The server port")
 
 	flag.StringVar(&cfg.baseUrl, "base_url", "", "The base URL for short links")
