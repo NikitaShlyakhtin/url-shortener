@@ -1,4 +1,4 @@
-FROM golang:latest
+FROM golang:latest as builder
 
 WORKDIR /app
 
@@ -8,6 +8,12 @@ RUN go mod download
 
 COPY . .
 
-RUN make build/mock_client
+RUN CGO_ENABLED=0 make build/mock_client
 
-CMD ["./bin/mock_client"] 
+FROM alpine:latest
+
+WORKDIR /root/
+
+COPY --from=builder /app/bin/mock_client .
+
+CMD ./mock_client

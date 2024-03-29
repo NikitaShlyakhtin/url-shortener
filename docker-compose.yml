@@ -11,6 +11,6 @@ services:
       - "50051:50051"
     healthcheck:
       test: [ "CMD", "/grpc_health_probe", "-addr=:50051" ]
-      interval: 30s
+      interval: 20s
       timeout: 10s
       retries: 3
