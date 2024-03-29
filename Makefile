@@ -36,6 +36,11 @@ proto/generate:
     --go-grpc_out=. --go-grpc_opt=paths=source_relative \
     internal/proto/url_shortener.proto
 
+## flags/api: show the flags for the cmd/api application
+.PHONY: flags/api
+flags/api:
+	go run ./cmd/api -h
+
 # ==================================================================================== #
 # QUALITY CONTROL
 # ==================================================================================== #
